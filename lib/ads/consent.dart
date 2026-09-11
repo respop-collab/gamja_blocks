@@ -39,9 +39,10 @@ class ConsentManager {
         params,
         () async {
           try {
-            if (await ConsentInformation.instance.isConsentFormAvailable()) {
-              await _loadAndShow();
-            }
+            // 필요한 지역에서만 양식을 띄운다. 그 판단은 SDK 가 한다.
+            await ConsentForm.loadAndShowConsentFormIfRequired((err) {
+              if (err != null) debugPrint('Consent form failed: ${err.message}');
+            });
           } catch (e) {
             debugPrint('Consent form failed: $e');
           }
@@ -58,28 +59,6 @@ class ConsentManager {
       debugPrint('Consent gather failed: $e');
     }
     _done = true;
-  }
-
-  Future<void> _loadAndShow() async {
-    final completer = Completer<void>();
-    ConsentForm.loadConsentForm(
-      (form) async {
-        final status = await ConsentInformation.instance.getConsentStatus();
-        if (status == ConsentStatus.required) {
-          form.show((err) {
-            if (err != null) debugPrint('Consent show failed: ${err.message}');
-            if (!completer.isCompleted) completer.complete();
-          });
-        } else {
-          if (!completer.isCompleted) completer.complete();
-        }
-      },
-      (err) {
-        debugPrint('Consent load failed: ${err.message}');
-        if (!completer.isCompleted) completer.complete();
-      },
-    );
-    await completer.future;
   }
 
   /// 보호자 화면에서 동의 설정을 다시 열 수 있게 한다.

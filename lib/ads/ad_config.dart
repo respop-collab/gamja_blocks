@@ -18,7 +18,11 @@ import '../game/curve.dart';
 
 class AdConfig {
   /// 실제 배포 여부. 릴리스 빌드에서만 의미가 있다.
-  static const bool useRealIds = false;
+  ///
+  /// const 가 아니라 final 인 이유: const 로 두면 분석기가 값을 미리 계산해
+  /// 이 값을 쓰는 조건문을 "닿지 않는 코드"로 보고 경고를 낸다.
+  /// 그 경고 하나가 CI 의 analyze 단계를 통째로 실패시킨다.
+  static final bool useRealIds = false;
 
   /// 실제 ID를 쓸 조건. 릴리스 빌드가 아니면 무조건 테스트 ID다.
   static bool get _real => useRealIds && kReleaseMode;

@@ -1,46 +1,58 @@
 /// 출시 점검. 사람이 기억으로 막던 실수를 테스트로 막는다.
 ///
-/// 이 테스트들은 개발 중에는 통과하고, 실제 출시 설정으로 바꾼 순간부터
-/// 빠진 값이 있으면 실패한다. 그래서 "실제 ID 켜 놓고 값은 비어 있음" 같은
-/// 조합으로 스토어에 올라가는 일이 생기지 않는다.
+/// 상수를 직접 참조하지 않고 소스 파일의 글자를 읽는다.
+/// useRealIds 는 컴파일 시점 상수라서 if 문에 그대로 쓰면
+/// 분석기가 "닿지 않는 코드"로 보고 경고를 낸다. 그 경고는 빌드를 멈춘다.
 library;
 
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gamja_blocks/ads/ad_config.dart';
 
 String _read(String path) => File(path).readAsStringSync();
 
+/// 출시 설정으로 전환했는지 여부를 소스 글자에서 읽는다.
+bool get _releaseMode {
+  final src = _read('lib/ads/ad_config.dart');
+  return RegExp(r'useRealIds\s*=\s*true').hasMatch(src);
+}
+
+String? _match(String src, String pattern) =>
+    RegExp(pattern).firstMatch(src)?.group(1);
+
 void main() {
-  test('실제 광고 ID를 켰다면 값이 모두 채워져 있어야 한다', () {
-    if (AdConfig.useRealIds) {
-      expect(AdConfig.realIdsComplete, isTrue,
-          reason: 'useRealIds 가 true 인데 광고 단위 ID 가 비어 있다');
+  test('실제 광고 ID를 켰다면 광고 단위 ID가 모두 채워져 있어야 한다', () {
+    if (!_releaseMode) return;
+    final src = _read('lib/ads/ad_config.dart');
+    for (final name in [
+      '_realBannerAndroid',
+      '_realInterstitialAndroid',
+      '_realRewardedAndroid',
+    ]) {
+      final v = _match(src, "$name\\s*=\\s*'([^']*)'");
+      expect(v, isNotNull, reason: '$name 를 찾지 못했다');
+      expect(v, isNotEmpty, reason: '$name 가 비어 있다');
     }
   });
 
-  test('실제 광고 ID를 켰다면 앱 ID도 테스트 값이 아니어야 한다', () {
-    if (AdConfig.useRealIds) {
-      expect(AdConfig.androidAppId.contains('3940256099942544'), isFalse,
-          reason: '구글 테스트 앱 ID 가 그대로 남아 있다');
-    }
+  test('실제 광고 ID를 켰다면 앱 ID가 구글 테스트 값이 아니어야 한다', () {
+    if (!_releaseMode) return;
+    final src = _read('lib/ads/ad_config.dart');
+    final v = _match(src, "androidAppId\\s*=\\s*'([^']*)'");
+    expect(v, isNotNull);
+    expect(v!.contains('3940256099942544'), isFalse,
+        reason: '구글 테스트 앱 ID 가 그대로 남아 있다');
   });
 
-  test('개인정보 처리방침 주소에 자리표시자가 남아 있지 않다', () {
+  test('개인정보 처리방침 주소에 자리표시자가 없다', () {
     final src = _read('lib/ui/parent_gate.dart');
-    final m = RegExp(r"kPrivacyPolicyUrl\s*=\s*\n?\s*'([^']+)'").firstMatch(src);
-    expect(m, isNotNull, reason: '주소 상수를 찾지 못했다');
-    final url = m!.group(1)!;
-
-    // 실제 광고 ID를 쓰는 출시 설정이라면 자리표시자가 남아 있으면 안 된다.
-    if (AdConfig.useRealIds) {
-      expect(url.contains('<'), isFalse, reason: '주소에 자리표시자가 남아 있다: $url');
-      expect(url.startsWith('https://'), isTrue);
-    }
+    final url = _match(src, r"kPrivacyPolicyUrl\s*=\s*\n?\s*'([^']+)'");
+    expect(url, isNotNull, reason: '주소 상수를 찾지 못했다');
+    expect(url!.startsWith('https://'), isTrue);
+    expect(url.contains('<'), isFalse, reason: '자리표시자가 남아 있다: $url');
   });
 
-  test('앱 오프닝 광고는 꺼져 있어야 한다', () {
+  test('앱 오프닝 광고는 꺼져 있다', () {
     // Families 정책 금지 항목이다. 실수로 켜면 여기서 걸린다.
     final src = _read('lib/ads/ad_config.dart');
     expect(src.contains('appOpenAdEnabled = false'), isTrue);
@@ -63,7 +75,7 @@ void main() {
 
   test('한자가 섞여 있지 않다', () {
     // 한글과 시각적으로 구분되지 않는 한자가 들어가는 사고를 막는다.
-    final targets = <String>[
+    const targets = <String>[
       'lib/main.dart',
       'lib/ads/ad_config.dart',
       'lib/ads/ad_manager.dart',
@@ -74,8 +86,7 @@ void main() {
       'lib/ui/parent_gate.dart',
     ];
     for (final path in targets) {
-      final src = _read(path);
-      for (final r in src.runes) {
+      for (final r in _read(path).runes) {
         expect(r >= 0x4E00 && r <= 0x9FFF, isFalse,
             reason: '$path 에 한자 ${String.fromCharCode(r)} 가 있다');
       }
