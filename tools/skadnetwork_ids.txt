@@ -1,0 +1,16 @@
+# SKAdNetwork 식별자 목록 (iOS 전용)
+#
+# 한 줄에 하나씩, <문자열>.skadnetwork 형태로 적는다.
+# tools/patch_platform.py 가 빌드할 때 Info.plist 에 넣는다.
+#
+# 값을 어디서 가져오는가:
+#   Google AdMob 문서의 "SKAdNetwork 식별자 추가" 페이지에 게시된 목록을
+#   그대로 복사해서 아래에 붙여 넣는다.
+#   https://developers.google.com/admob/ios/privacy/strategies
+#
+# 식별자를 추측하거나 기억해서 적으면 안 된다.
+# 틀린 값이 들어가도 빌드는 통과하고 광고도 나가지만,
+# 설치 기여 측정이 조용히 어긋나 원인을 찾기 어렵다.
+#
+# 아래 한 줄은 구글 자체 식별자이며 patch_platform.py 가 항상 포함한다.
+cstr6suwn9.skadnetwork

@@ -1,0 +1,11 @@
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+# 플랫폼 폴더는 CI에서 flutter create 로 생성한다
+android/
+ios/
+# 서명
+*.jks
+key.properties

@@ -1,0 +1,28 @@
+name: gamja_blocks
+description: 감자토끼 블록퍼즐 — 서버 없는 무한 단계 블록 퍼즐
+publish_to: "none"
+version: 0.3.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_mobile_ads: ^5.2.0
+  in_app_purchase: ^3.2.0
+  shared_preferences: ^2.3.2
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/gamja/
+
+# 폰트는 tools/fetch_fonts.py 가 내려받고 이 파일에 선언을 추가한다.
+# 폰트가 없어도 시스템 한글 폰트로 대체되어 빌드와 실행에 문제가 없다.
