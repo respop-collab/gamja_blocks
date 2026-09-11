@@ -10,6 +10,10 @@ on:
 jobs:
   android:
     runs-on: ubuntu-latest
+    # 실패 로그를 이슈로 남기기 위한 권한
+    permissions:
+      contents: read
+      issues: write
     # secrets 컨텍스트는 스텝의 if 에서 쓸 수 없다. 잡 수준 env 로 옮겨야 동작한다.
     env:
       HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
@@ -109,6 +113,30 @@ jobs:
       - name: Build release AAB
         if: env.HAS_KEYSTORE == 'true'
         run: flutter build appbundle --release
+
+      # 실패하면 로그를 이슈로 남긴다.
+      # 깃허브 실행 로그는 로그인 없이 읽을 수 없어서, 읽을 수 있는 곳에 옮겨 둔다.
+      - name: Report logs as issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "빌드 #${{ github.run_number }} 실패 기록입니다. 확인 후 닫으십시오."
+            echo
+            for f in pub analyze test build; do
+              if [ -f "$f.txt" ]; then
+                echo "## $f"
+                echo '```'
+                tail -120 "$f.txt"
+                echo '```'
+                echo
+              fi
+            done
+          } > report.md
+          gh issue create \
+            --title "CI 실패 기록 #${{ github.run_number }}" \
+            --body-file report.md
 
       - uses: actions/upload-artifact@v4
         if: success()
