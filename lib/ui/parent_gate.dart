@@ -18,10 +18,13 @@ import 'theme.dart';
 
 /// 개인정보 처리방침 주소.
 /// 원문은 docs/privacy.html 에 있고, GitHub Pages 로 그대로 게시된다.
-/// 저장소 설정 > Pages > Source 를 main 브랜치의 /docs 로 지정하면 아래 주소가 살아난다.
-/// 출시 전 <깃허브계정>과 <저장소이름>을 실제 값으로 바꿔야 한다. 플레이 콘솔에도 같은 주소를 넣는다.
+/// 저장소 설정 > Pages > Source 를 main 브랜치의 /docs 로 지정해야 살아난다.
+/// 플레이 콘솔의 개인정보 처리방침 항목에도 같은 주소를 넣는다.
 const String kPrivacyPolicyUrl =
-    'https://<깃허브계정>.github.io/<저장소이름>/privacy.html';
+    'https://respop-collab.github.io/gamja_blocks/privacy.html';
+
+/// 고객지원 페이지. 같은 방식으로 게시된다.
+const String kSupportUrl = 'https://respop-collab.github.io/gamja_blocks/';
 
 Future<void> showParentGate(BuildContext context) async {
   final ok = await showDialog<bool>(
@@ -232,6 +235,13 @@ class _AdultSheetState extends State<_AdultSheet> {
               label: '개인정보 처리방침',
               width: double.infinity,
               onPressed: () => launchUrl(Uri.parse(kPrivacyPolicyUrl),
+                  mode: LaunchMode.externalApplication),
+            ),
+            const SizedBox(height: 8),
+            GbButton(
+              label: '문의와 도움말',
+              width: double.infinity,
+              onPressed: () => launchUrl(Uri.parse(kSupportUrl),
                   mode: LaunchMode.externalApplication),
             ),
 
