@@ -1,7 +1,7 @@
 name: gamja_blocks
 description: 감자토끼 블록퍼즐 — 서버 없는 무한 단계 블록 퍼즐
 publish_to: "none"
-version: 0.3.0+1
+version: 0.5.0+3
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

@@ -131,3 +131,6 @@ class GbButton extends StatelessWidget {
     );
   }
 }
+
+/// 화면에 표시할 판 번호. 고칠 때마다 올린다.
+const String kVersionLabel = '0.5.0';

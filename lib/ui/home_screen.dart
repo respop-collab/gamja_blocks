@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../game/cards.dart';
 import '../game/curve.dart';
+import '../game/records.dart';
 import '../storage/prefs.dart';
 import 'album_screen.dart';
+import 'records_screen.dart';
 import 'game_screen.dart';
 import 'parent_gate.dart';
 import 'theme.dart';
@@ -17,6 +19,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String _recordSubtitle() {
+    final done = kMilestoneStages.where((x) => Prefs.bestTimeMs(x) > 0).toList();
+    if (done.isEmpty) return '50단계부터 기록이 남아요';
+    final last = done.last;
+    return '$last단계 ${formatMs(Prefs.bestTimeMs(last))} · ${done.length}개 기록';
+  }
+
   Future<void> _open(int stage) async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => GameScreen(stage: stage)),
@@ -72,10 +81,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (mounted) setState(() {});
                 },
               ),
+              const SizedBox(height: 12),
+              _BigCard(
+                title: '기록',
+                subtitle: _recordSubtitle(),
+                icon: Icons.timer_outlined,
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const RecordsScreen()),
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
 
               const Spacer(flex: 2),
               Text('통과한 단계 ${Prefs.stagesCleared}개',
                   style: const TextStyle(fontSize: 13, color: kInkSoft)),
+              const SizedBox(height: 4),
+              // 어떤 판이 설치돼 있는지 눈으로 확인하기 위한 표시.
+              const Text(kVersionLabel,
+                  style: TextStyle(fontSize: 11, color: Color(0xFFBFA98F))),
               const SizedBox(height: 12),
               const BannerSlot(),
             ],

@@ -42,6 +42,30 @@ class GameEngine {
   /// 뽑기 횟수. 저장·복원 시 도형 순서를 재현하기 위해 센다.
   int draws;
 
+  /// 이 판에 실제로 들인 시간(밀리초).
+  /// 앱을 내렸다 올린 동안은 세지 않는다. 그래야 기록이 공정하다.
+  int elapsedMs = 0;
+  int? _tickFrom;
+
+  /// 화면이 살아 있는 동안만 시계를 돌린다.
+  void resumeTimer() {
+    _tickFrom ??= DateTime.now().millisecondsSinceEpoch;
+  }
+
+  void pauseTimer() {
+    final from = _tickFrom;
+    if (from == null) return;
+    elapsedMs += DateTime.now().millisecondsSinceEpoch - from;
+    _tickFrom = null;
+  }
+
+  /// 지금까지의 경과 시간. 시계가 돌고 있으면 진행분을 더해 돌려준다.
+  int get liveElapsedMs {
+    final from = _tickFrom;
+    if (from == null) return elapsedMs;
+    return elapsedMs + (DateTime.now().millisecondsSinceEpoch - from);
+  }
+
   GameEngine._({
     required this.p,
     required this.board,
@@ -282,6 +306,7 @@ class GameEngine {
         'lines': linesCleared,
         'moves': movesLeft,
         'helps': helpsLeft,
+        'elapsed': elapsedMs,
       });
 
   static GameEngine? fromJson(String raw) {
@@ -319,6 +344,7 @@ class GameEngine {
         draws: draws,
       );
       e._seed = seed;
+      e.elapsedMs = m['elapsed'] as int? ?? 0;
       return e;
     } catch (_) {
       return null;

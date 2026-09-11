@@ -5,6 +5,7 @@ library;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../game/cards.dart';
+import '../game/records.dart';
 
 class Prefs {
   static late SharedPreferences _p;
@@ -53,6 +54,27 @@ class Prefs {
   // 통계
   static int get stagesCleared => _p.getInt('stages_cleared') ?? 0;
   static Future<void> incStagesCleared() => _p.setInt('stages_cleared', stagesCleared + 1);
+
+  // 기록 — 마일스톤 단계의 개인 최고 클리어 시간(밀리초)
+  //
+  // 나중에 Play Games 리더보드를 켤 때 이 값을 그대로 올린다.
+  // 그때 가서 기록을 처음부터 모으면 먼저 시작한 이용자가 불리해지므로
+  // 순위표가 없는 지금부터 쌓아 둔다.
+  static int bestTimeMs(int stage) => _p.getInt('best_ms_$stage') ?? 0;
+
+  /// 더 빠른 기록일 때만 갱신한다. 갱신했으면 true.
+  static Future<bool> recordTime(int stage, int ms) async {
+    if (!isMilestone(stage) || ms <= 0) return false;
+    final prev = bestTimeMs(stage);
+    if (prev != 0 && prev <= ms) return false;
+    await _p.setInt('best_ms_$stage', ms);
+    return true;
+  }
+
+  /// 모든 판에 들인 시간의 합. 나중에 누적 시간 순위에 쓴다.
+  static int get totalPlayMs => _p.getInt('total_play_ms') ?? 0;
+  static Future<void> addPlayMs(int ms) =>
+      _p.setInt('total_play_ms', totalPlayMs + (ms > 0 ? ms : 0));
 
   // 전면광고 빈도 제어
   static int get failCount => _p.getInt('fail_count') ?? 0;

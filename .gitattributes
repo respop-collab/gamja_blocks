@@ -1,2 +1,4 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+
+
+# base64 텍스트이므로 줄바꿈 변환을 하지 않는다
+tools/debug_keystore.b64 -text

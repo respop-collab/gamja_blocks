@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../game/curve.dart';
 import '../game/engine.dart';
 import '../game/piece.dart';
 import '../game/cards.dart';
+import '../game/records.dart';
 import '../storage/prefs.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -36,12 +38,21 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   String _buddySprite = Gamja.peek;
   String _buddyText = '';
 
+  Timer? _clock;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _e = _loadOrStart();
     _buddyText = _idleLine();
+    _e.resumeTimer();
+    // 시계 표시는 이 구간에서만. 아이가 하는 구간에는 시간 압박을 두지 않는다.
+    if (showTimerForStage(_e.p.stage)) {
+      _clock = Timer.periodic(const Duration(milliseconds: 200), (_) {
+        if (mounted && _e.result == StageResult.playing) setState(() {});
+      });
+    }
   }
 
   GameEngine _loadOrStart() {
@@ -55,13 +66,21 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _clock?.cancel();
+    _e.pauseTimer();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
-    if (s == AppLifecycleState.paused || s == AppLifecycleState.inactive) _persist();
+    if (s == AppLifecycleState.paused || s == AppLifecycleState.inactive) {
+      // 앱을 내린 동안은 시간을 세지 않는다. 그래야 기록이 공정하다.
+      _e.pauseTimer();
+      _persist();
+    } else if (s == AppLifecycleState.resumed) {
+      if (_e.result == StageResult.playing) _e.resumeTimer();
+    }
   }
 
   void _persist() {
@@ -233,6 +252,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Future<void> _onCleared() async {
     if (_dialogOpen) return;
     _dialogOpen = true;
+    _clock?.cancel();
+    _e.pauseTimer();
+    final ms = _e.elapsedMs;
+    await Prefs.addPlayMs(ms);
+    final isBest = await Prefs.recordTime(_e.p.stage, ms);
     await Prefs.setSavedGame(null);
     await Prefs.incStagesCleared();
     final next = _e.p.stage + 1;
@@ -248,11 +272,18 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     if (!mounted) return;
 
     final nextTier = tierOf(next);
-    final sub = cardIdx != null
+    final base = cardIdx != null
         ? '감자 카드를 한 장 받았어요'
         : nextTier != _e.p.tier
             ? '다음은 ${nextTier.label} 구간이에요'
             : '${10 - (_e.p.stage % 10)}단계 뒤에 카드를 받아요';
+
+    // 기록 단계에서는 걸린 시간을 함께 보여 준다.
+    final sub = isMilestone(_e.p.stage)
+        ? (isBest
+            ? '$base\n기록 ${formatMs(ms)} · 최고 기록!'
+            : '$base\n기록 ${formatMs(ms)} · 최고 ${formatMs(Prefs.bestTimeMs(_e.p.stage))}')
+        : base;
 
     await showDialog<void>(
       context: context,
@@ -275,6 +306,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Future<void> _onFailed() async {
     if (_dialogOpen) return;
     _dialogOpen = true;
+    _e.pauseTimer();
+    await Prefs.addPlayMs(_e.elapsedMs);
     await Prefs.setSavedGame(null);
     if (!mounted) return;
 
@@ -306,6 +339,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         if (ok) {
           _revived = true;
           setState(() => _e.reviveByAd());
+          _e.resumeTimer();
           _say('한 번 더!');
           _persist();
         } else {
@@ -318,6 +352,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _e = GameEngine.start(widget.stage);
             _revived = false;
           });
+          _e.resumeTimer();
         });
       default:
         Navigator.of(context).pop();
@@ -424,7 +459,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               children: [
                 Text(
                   '줄 ${p.goal}개 (${math.min(_e.linesCleared, p.goal)}/${p.goal})'
-                  '${p.hasMoveLimit ? ' · 남은 수 ${math.max(0, _e.movesLeft)}' : ''}',
+                  '${p.hasMoveLimit ? ' · 남은 수 ${math.max(0, _e.movesLeft)}' : ''}'
+                  '${showTimerForStage(p.stage) ? ' · ${formatMs(_e.liveElapsedMs)}' : ''}',
                   style: const TextStyle(
                       fontSize: 11, fontWeight: FontWeight.w700, color: kInkSoft),
                   overflow: TextOverflow.ellipsis,
