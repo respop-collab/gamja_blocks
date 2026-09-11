@@ -25,8 +25,11 @@ APP_NAME = "감자토끼 블록퍼즐"
 
 # 광고 SDK 요구 사항. google_mobile_ads 5.x 기준.
 MIN_SDK = 23
-TARGET_SDK = 35   # 2025년 8월 이후 구글 플레이 신규 업로드 요건
-COMPILE_SDK = 35
+# 플레이 신규 업로드 요건은 해마다 한 단계씩 오른다.
+# compileSdk 는 의존 라이브러리가 요구하는 값을 따라가야 한다.
+# androidx.core 1.17 이상이 36 을 요구하므로 36 미만이면 빌드가 멈춘다.
+TARGET_SDK = 36
+COMPILE_SDK = 36
 
 
 def read_app_ids() -> tuple[str, str]:
