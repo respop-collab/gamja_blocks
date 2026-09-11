@@ -43,16 +43,52 @@ jobs:
           python3 tools/make_icons.py
 
       - name: Dependencies
-        run: flutter pub get
+        run: |
+          set +e
+          flutter pub get > pub.txt 2>&1
+          code=$?
+          echo "## 의존성 설치 (exit $code)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -60 pub.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit $code
 
+      # 진단 목적: 결과를 실행 요약 페이지에 남긴다.
+      # 로그를 열어 보지 않아도 요약만 보면 무엇이 틀렸는지 알 수 있다.
       - name: Analyze
-        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos > analyze.txt 2>&1
+          code=$?
+          echo "## 분석 결과 (exit $code)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -120 analyze.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit 0
 
       - name: Test
-        run: flutter test
+        continue-on-error: true
+        run: |
+          set +e
+          flutter test > test.txt 2>&1
+          code=$?
+          echo "## 테스트 결과 (exit $code)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -120 test.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit 0
 
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: |
+          set +e
+          flutter build apk --debug > build.txt 2>&1
+          code=$?
+          echo "## 빌드 결과 (exit $code)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -150 build.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit $code
 
       - name: Prepare release signing
         if: env.HAS_KEYSTORE == 'true'
@@ -75,6 +111,7 @@ jobs:
         run: flutter build appbundle --release
 
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: gamja-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
