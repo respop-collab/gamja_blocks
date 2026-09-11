@@ -172,7 +172,10 @@ class BuddyBar extends StatelessWidget {
       children: [
         Image.asset(sprite, height: 74, filterQuality: FilterQuality.medium),
         const SizedBox(width: 8),
-        Flexible(
+        // Flexible 과 Spacer 를 한 줄에 같이 쓰면 Spacer 가 남은 자리를 먼저
+        // 가져가 말풍선이 좁아지고 글자가 여러 줄로 접힌다.
+        // 말풍선이 남은 자리를 차지하게 하고, 글자는 한 줄로 고정한다.
+        Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
             decoration: BoxDecoration(
@@ -185,11 +188,16 @@ class BuddyBar extends StatelessWidget {
                 bottomLeft: Radius.circular(4),
               ),
             ),
-            child: Text(text,
-                style: const TextStyle(fontFamily: 'Jua', fontSize: 16, color: kInk)),
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: const TextStyle(fontFamily: 'Jua', fontSize: 16, color: kInk),
+            ),
           ),
         ),
-        if (trailing != null) ...[const Spacer(), trailing!],
+        if (trailing != null) ...[const SizedBox(width: 8), trailing!],
       ],
     );
   }

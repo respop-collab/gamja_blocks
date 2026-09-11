@@ -370,7 +370,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   final tl = _ghostTopLeft(_dragAt, dragPiece, cell);
                   final pad = media.padding;
                   return Positioned(
-                    left: tl.dx - 16,
+                    left: tl.dx - pad.left,
                     top: tl.dy - pad.top,
                     child: IgnorePointer(
                       child: PieceView(piece: dragPiece, cell: cell, opacity: 0.92),
@@ -517,20 +517,32 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   Widget _traySlot(int i, double trayCell) {
     final p = _e.tray[i];
-    if (p == null || _dragIndex == i) return const SizedBox.shrink();
+    if (p == null) return const SizedBox.shrink();
     final key = _trayKeys[i];
-    return Center(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanStart: (d) {
-          final box = key.currentContext?.findRenderObject() as RenderBox?;
-          if (box == null) return;
-          _onPanStart(i, d, box.size, box.localToGlobal(Offset.zero));
-        },
-        onPanUpdate: _onPanUpdate,
-        onPanEnd: (_) => _onPanEnd(),
-        onPanCancel: _onPanEnd,
-        child: PieceView(key: key, piece: p, cell: trayCell),
+    final dragging = _dragIndex == i;
+
+    // 제스처를 붙들고 있는 위젯을 드래그 도중에 트리에서 빼면 안 된다.
+    // 위젯이 사라지면 제스처 인식기가 함께 파기되어
+    // onPanUpdate 와 onPanEnd 가 아예 호출되지 않는다.
+    // 그래서 없애지 않고 투명하게만 만든다. 자리도 그대로 유지된다.
+    //
+    // 또한 손가락으로 집는 영역을 칸 전체로 넓힌다.
+    // 도형 그림에만 반응하면 작은 도형을 집기가 어렵다.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart: (d) {
+        final box = key.currentContext?.findRenderObject() as RenderBox?;
+        if (box == null) return;
+        _onPanStart(i, d, box.size, box.localToGlobal(Offset.zero));
+      },
+      onPanUpdate: _onPanUpdate,
+      onPanEnd: (_) => _onPanEnd(),
+      onPanCancel: _onPanEnd,
+      child: Center(
+        child: Opacity(
+          opacity: dragging ? 0.0 : 1.0,
+          child: PieceView(key: key, piece: p, cell: trayCell),
+        ),
       ),
     );
   }
