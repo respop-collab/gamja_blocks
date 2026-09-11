@@ -67,10 +67,16 @@ void main() {
   });
 
   test('아동 대상 광고 신호가 설정돼 있다', () {
+    // 9.x 부터 아동·청소년 신호가 ageRestrictedTreatment 로 통합됐다.
     final src = _read('lib/ads/ad_manager.dart');
     expect(src.contains('MaxAdContentRating.g'), isTrue);
-    expect(src.contains('TagForChildDirectedTreatment.yes'), isTrue);
-    expect(src.contains('TagForUnderAgeOfConsent.yes'), isTrue);
+    expect(src.contains('AgeRestrictedTreatment.child'), isTrue);
+  });
+
+  test('유럽 동의 절차가 붙어 있다', () {
+    final src = _read('lib/ads/ad_manager.dart');
+    expect(src.contains('ConsentManager.instance.gather()'), isTrue,
+        reason: '광고 초기화 전에 동의 절차를 거쳐야 한다');
   });
 
   test('한자가 섞여 있지 않다', () {

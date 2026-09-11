@@ -42,11 +42,12 @@ class AdManager {
       await ConsentManager.instance.gather();
       await MobileAds.instance.initialize();
       // 전연령 앱이므로 광고 콘텐츠 등급을 G로 제한하고 맞춤형 광고를 끈다.
+      // 9.x 부터 아동·청소년 신호가 ageRestrictedTreatment 하나로 통합됐다.
+      // 예전 tagForChildDirectedTreatment 는 폐기 예정이라 쓰지 않는다.
       await MobileAds.instance.updateRequestConfiguration(
         RequestConfiguration(
           maxAdContentRating: MaxAdContentRating.g,
-          tagForChildDirectedTreatment: TagForChildDirectedTreatment.yes,
-          tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.yes,
+          ageRestrictedTreatment: AgeRestrictedTreatment.child,
         ),
       );
       _ready = true;

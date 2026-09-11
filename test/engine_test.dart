@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gamja_blocks/game/curve.dart';
 import 'package:gamja_blocks/game/engine.dart';
 import 'package:gamja_blocks/game/piece.dart';
 
